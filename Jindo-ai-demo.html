@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jindo — AI-Powered Meeting Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', -apple-system, sans-serif; background: #f5f4f0; }
+  input, button { font-family: inherit; }
+  ::placeholder { color: #a8a5a0; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const SCENARIOS = {
+  "What were the main concerns Greenfield Manufacturing raised about AI adoption?": {
+    id: "greenfield",
+    searchQuery: "Greenfield Manufacturing concerns AI adoption",
+    summary: "Greenfield Manufacturing raised three primary concerns across the discovery meetings (November\u2013December 2024).\n\nThe most urgent was workforce impact. Their VP of Operations, David Chen, was direct: the plant floor workforce (approximately 1,400 employees across three facilities) views AI as a direct threat to jobs. The union has already raised this in contract negotiations, and any AI initiative that doesn\u2019t include a credible reskilling program is a non-starter politically.\n\nSecond, they have significant data quality issues. Their manufacturing execution system (MES) is 12 years old and running on a heavily customized SAP instance. The quality data captured at each station is inconsistent \u2014 some lines log defect codes manually, others use automated optical inspection, and the two systems don\u2019t share a taxonomy.\n\nThird, David raised integration risk explicitly: Greenfield had a failed ERP migration in 2021 that cost $8M and caused three weeks of production disruption. There\u2019s deep organizational skepticism about large technology transformations. They want a phased proof-of-concept approach \u2014 start with one line, prove value, then expand.",
+    confidence: "high",
+    sources: [
+      { doc: "Greenfield Mfg \u2014 Discovery Meeting #1 Transcript", section: "Workforce Discussion", date: "Nov 8, 2024", relevance: 0.93, text: "DAVID CHEN (VP Ops): I'll be blunt with you. We've got 1,400 people on the floor across three plants. The union is already asking about this in contract talks. If you come in here and tell them AI is going to inspect parts faster than they can \u2014 I don't care how good the ROI looks, it's dead on arrival. We need a workforce story. Reskilling, redeployment, something concrete." },
+      { doc: "Greenfield Mfg \u2014 Discovery Meeting #2 Transcript", section: "Data Infrastructure", date: "Nov 22, 2024", relevance: 0.89, text: "CHEN: It depends on the line. Lines 1 through 4 have the optical inspection \u2014 those log defect codes automatically. Lines 5 through 9 are still manual. Operator writes a code on the ticket. And the two systems don't talk to each other. SAP has been customized so heavily over 12 years that the vendor barely recognizes it." },
+      { doc: "Greenfield Mfg \u2014 Discovery Summary", section: "Risk Factors", date: "Dec 3, 2024", relevance: 0.85, text: "Key risk: failed ERP migration in 2021 ($8M cost, 3-week production disruption) has created deep organizational skepticism toward large technology initiatives. Client strongly prefers phased proof-of-concept approach." },
+    ],
+    searchOnlyExplanation: "The raw query is embedded as-is. The embedding model matches on surface-level semantic similarity \u2014 \"Greenfield,\" \"manufacturing,\" \"AI\" \u2014 but doesn\u2019t understand that \"concerns raised\" means we want the client\u2019s objections and hesitations, not general mentions of AI or Greenfield.",
+    searchOnlyPassages: [
+      { doc: "Greenfield Mfg \u2014 AI Vendor Evaluation Matrix", section: "Scoring Criteria", date: "Jan 2025", relevance: 0.78, text: "Greenfield Manufacturing AI vendor scoring: DataRobot \u2014 82/100 (strong AutoML, weak on edge deployment); C3.ai \u2014 76/100 (good manufacturing templates, high license cost); Sight Machine \u2014 71/100 (purpose-built for manufacturing, smaller company risk). Evaluation weighted 40% technical fit, 30% cost, 20% implementation timeline, 10% vendor stability." },
+      { doc: "Greenfield Mfg \u2014 Engagement Proposal Draft", section: "AI Opportunity Assessment", date: "Dec 2024", relevance: 0.74, text: "We propose a 12-week AI opportunity assessment for Greenfield Manufacturing covering: predictive quality analytics across production lines, automated optical inspection enhancement, predictive maintenance for CNC equipment, and supply chain demand forecasting. Estimated investment: $380K for assessment phase." },
+      { doc: "Industry Report \u2014 AI in Manufacturing 2024", section: "Adoption Trends", date: "Sep 2024", relevance: 0.68, text: "According to McKinsey\u2019s 2024 survey, 67% of manufacturing firms are piloting AI in at least one production process. Greenfield Manufacturing\u2019s peer group (mid-market discrete manufacturing, $500M-2B revenue) shows 43% adoption rate for quality analytics and 28% for predictive maintenance." },
+      { doc: "Greenfield Mfg \u2014 Discovery Meeting #1 Transcript", section: "Introductions and Agenda", date: "Nov 8, 2024", relevance: 0.61, text: "CONSULTANT: Thank you for having us. Today we'd like to cover three areas \u2014 your current manufacturing operations, the technology landscape, and where you see AI fitting into your strategic priorities. CHEN: Sounds good. I should tell you upfront, our CEO is very interested in AI. He read something in the Wall Street Journal and now it's on every board deck." },
+    ],
+    searchOnlyProblems: [
+      "Top result is a vendor evaluation spreadsheet \u2014 semantically close to \"Greenfield + AI\" but completely irrelevant to the question about client concerns",
+      "Second result is our own proposal draft \u2014 again mentions AI and Greenfield but says nothing about their objections",
+      "Third result is a generic industry report that happens to mention Greenfield\u2019s peer group \u2014 the embedding matched on surface keywords",
+      "The one transcript passage returned (ranked 4th) is just the meeting intro \u2014 it mentions AI but not the actual concerns raised later",
+      "The critical passages \u2014 David Chen\u2019s union warning, the data infrastructure problems, the failed ERP migration \u2014 are absent because the embedding doesn\u2019t understand that \"concerns raised\" means objections and hesitations",
+    ],
+    llmBadRetrievalResponse: "Based on the available information, Greenfield Manufacturing appears to be actively embracing AI adoption. Here are the key points from their engagement:\n\n**Vendor Evaluation in Progress:** Greenfield has already scored three AI vendors \u2014 DataRobot (82/100), C3.ai (76/100), and Sight Machine (71/100) \u2014 suggesting they\u2019ve moved past the concerns stage into active vendor selection. Their evaluation criteria prioritize technical fit (40%) and cost (30%).\n\n**Multiple AI Use Cases Identified:** The engagement proposal covers predictive quality analytics, automated optical inspection, predictive maintenance, and supply chain forecasting \u2014 indicating broad organizational buy-in for AI across operations.\n\n**CEO-Driven Initiative:** Their CEO is personally driving the AI agenda after reading about it, which suggests strong top-down support. The VP of Operations has been receptive in meetings.\n\n**Above-Average Peer Readiness:** Greenfield\u2019s peer group shows 43% AI adoption for quality analytics, and the company appears positioned to be among early movers.\n\nOverall, the engagement appears to be in a healthy state with strong executive sponsorship and a clear path forward through the vendor evaluation process.",
+    llmBadRetrievalProblems: [
+      "Completely wrong conclusion: says Greenfield is \"actively embracing\" AI when David Chen explicitly warned the initiative would be \"dead on arrival\" without a workforce story",
+      "Misinterprets the vendor evaluation as Greenfield\u2019s work \u2014 it\u2019s actually our internal pre-engagement analysis, not evidence of client buy-in",
+      "Mischaracterizes the CEO mention: the transcript shows Chen mildly noting the CEO\u2019s interest from a WSJ article \u2014 the LLM turns this into \"strong executive sponsorship\"",
+      "Misses every critical concern: the 1,400-person workforce with union pressure, the failed $8M ERP migration, the data infrastructure chaos, the deep organizational skepticism",
+      "Dangerous for a consultant: walking into a Greenfield meeting with this understanding would be deeply embarrassing and could lose the engagement",
+    ],
+    followUps: {
+      "What about for Lakewood Regional Bank?": {
+        id: "lakewood",
+        searchQuery: "Lakewood Regional Bank concerns AI adoption",
+        summary: "Lakewood Regional Bank\u2019s concerns were fundamentally different from Greenfield\u2019s \u2014 centered on regulatory risk and customer trust rather than workforce or infrastructure.\n\nTheir Chief Risk Officer, Maria Santos, was the dominant voice in both meetings. Her primary concern is explainability: any AI model used in lending decisions must produce auditable explanations that satisfy OCC examiners. She referenced a consent order issued to a peer bank in 2023 for using an opaque credit scoring model, and made clear that Lakewood will not deploy anything they can\u2019t fully explain to a regulator.\n\nSecond, customer data governance. Lakewood recently completed a $4M data privacy overhaul to comply with state-level consumer privacy laws. Santos is concerned that AI models \u2014 particularly anything using customer transaction patterns \u2014 could create new privacy exposure that undermines that investment.\n\nOn the positive side, Lakewood\u2019s CTO, James Park, is actively enthusiastic. He\u2019s already running a small internal experiment using GPT-4 for summarizing commercial loan applications and says the loan officers love it. His ask is to \u201Cscale what\u2019s working and add guardrails\u201D rather than start from scratch. The tension between Santos (risk-first) and Park (move-fast) was visible in both meetings.",
+        confidence: "high",
+        sources: [
+          { doc: "Lakewood Bank \u2014 Discovery Meeting #1 Transcript", section: "Regulatory Discussion", date: "Oct 15, 2024", relevance: 0.95, text: "MARIA SANTOS (CRO): Let me be very clear about where we stand. Any model that touches a lending decision needs to be fully explainable. Not 'mostly explainable.' Not 'we can approximate why it made that decision.' Fully. I sat across from OCC examiners last quarter and they specifically asked about our AI roadmap." },
+          { doc: "Lakewood Bank \u2014 Discovery Meeting #2 Transcript", section: "Data Governance", date: "Oct 29, 2024", relevance: 0.88, text: "SANTOS: We just spent $4 million overhauling our data privacy infrastructure. CCPA, the new state laws \u2014 we're compliant. My concern is that the moment you start feeding customer transaction histories into an AI model, we've potentially created a new data processing purpose that our current privacy notices don't cover." },
+          { doc: "Lakewood Bank \u2014 Discovery Summary", section: "Internal Dynamics", date: "Nov 5, 2024", relevance: 0.82, text: "Notable dynamic: CTO (Park) is actively enthusiastic about AI \u2014 already running a GPT-4 pilot for commercial loan application summarization. CRO (Santos) is the primary gatekeeper. Recommendation: frame initial proposals around augmenting the existing pilot with proper governance." },
+        ],
+        followUps: {}
+      },
+      "Summarize the key themes for my partner briefing": {
+        id: "greenfield-summary",
+        searchQuery: null,
+        summary: "Here\u2019s a concise briefing based on our discussion:\n\n**Greenfield Manufacturing \u2014 AI Discovery Findings**\n\nThree blockers to address before any proposal:\n\n\u2022 Workforce politics \u2014 1,400 plant floor employees, active union involvement. VP Ops says any initiative without a reskilling story is \u201Cdead on arrival.\u201D Must include concrete workforce transition plan.\n\n\u2022 Data infrastructure gap \u2014 12-year-old customized SAP MES with two incompatible quality tracking systems (automated optical on lines 1-4, manual on 5-9). Data harmonization is a prerequisite.\n\n\u2022 Organizational scar tissue \u2014 failed $8M ERP migration in 2021 caused 3-week production shutdown. Deep skepticism about large tech transformations. Client explicitly wants phased POC approach.\n\nRecommended approach: Single production line pilot using optical inspection data (already structured). Build workforce narrative in parallel. Do not propose broad transformation.",
+        confidence: "high",
+        sources: null,
+        followUps: {}
+      },
+    }
+  },
+  "Has any prospect mentioned concerns about AI bias or fairness?": {
+    id: "bias",
+    searchQuery: "AI bias fairness concerns prospect meetings",
+    summary: null,
+    confidence: "low",
+    lowConfidenceMessage: "I found some tangentially related mentions but no prospect has directly raised AI bias or fairness as a primary concern in the meetings captured so far.\n\nThe closest match is Maria Santos at Lakewood Regional Bank discussing model explainability in lending \u2014 but her concern is specifically about regulatory audit requirements, not bias per se. There\u2019s also a passing reference in the Greenfield summary about equitable reskilling, but that\u2019s about workforce fairness, not algorithmic bias.\n\nThis could mean bias hasn\u2019t come up yet, or it was discussed informally. You may want to proactively raise this in upcoming sessions \u2014 particularly with Lakewood given their lending use case, where fair lending regulations make this directly relevant.",
+    sources: [
+      { doc: "Lakewood Bank \u2014 Discovery Meeting #1 Transcript", section: "Regulatory Discussion", date: "Oct 15, 2024", relevance: 0.31, text: "SANTOS: Any model that touches a lending decision needs to be fully explainable. Not 'mostly explainable.' Fully. I sat across from OCC examiners last quarter and they specifically asked about our AI roadmap." },
+      { doc: "Greenfield Mfg \u2014 Discovery Summary", section: "Workforce Recommendations", date: "Dec 3, 2024", relevance: 0.22, text: "Reskilling program should emphasize equitable access across all three facilities and shift patterns. Union has specifically requested that any training opportunities not be limited to day-shift supervisors." },
+    ],
+    searchOnlyExplanation: "The query \"Has any prospect mentioned concerns about AI bias or fairness?\" is semantically complex \u2014 it\u2019s asking about the absence or presence of a topic across multiple meetings. The embedding model flattens this into a vector close to \"AI bias fairness\" and returns passages that mention related words, but can\u2019t determine whether those passages actually represent a prospect raising this concern.",
+    searchOnlyPassages: [
+      { doc: "Industry Report \u2014 Responsible AI Frameworks", section: "Bias Mitigation", date: "Aug 2024", relevance: 0.65, text: "Leading practices for AI bias mitigation include pre-deployment fairness audits, disparate impact testing across protected characteristics, ongoing monitoring for model drift, and human-in-the-loop review for high-stakes decisions. Financial services firms face particular regulatory scrutiny under ECOA and the Fair Housing Act." },
+      { doc: "Apex Internal \u2014 AI Practice Capabilities Deck", section: "Responsible AI Services", date: "Oct 2024", relevance: 0.52, text: "Our Responsible AI offering includes: bias and fairness assessment, model explainability consulting, AI governance framework design, and regulatory compliance review. Recent engagements include fairness audits for three Fortune 500 financial services clients." },
+      { doc: "Lakewood Bank \u2014 Discovery Meeting #1 Transcript", section: "Regulatory Discussion", date: "Oct 15, 2024", relevance: 0.38, text: "SANTOS: Any model that touches a lending decision needs to be fully explainable. Not 'mostly explainable.' Fully. I sat across from OCC examiners last quarter and they specifically asked about our AI roadmap." },
+    ],
+    searchOnlyProblems: [
+      "Top result is a generic industry report about bias \u2014 not from any client meeting at all. User might mistakenly think a prospect referenced this.",
+      "Second result is our own internal capabilities deck \u2014 the search matched on \"bias and fairness\" keywords but this is our marketing material, not client input",
+      "The actual Lakewood transcript is ranked third and doesn\u2019t mention bias directly \u2014 it\u2019s about explainability",
+      "None of the results answer the actual question: \"Has any prospect mentioned this?\" The search can\u2019t reason about absence \u2014 it can only find keyword matches",
+      "A consultant reading these results has no idea whether anyone actually raised bias. They\u2019d have to read every transcript manually to determine absence.",
+    ],
+    llmBadRetrievalResponse: "Yes, AI bias and fairness have been a notable concern among prospects. Here\u2019s what has been raised:\n\n**Regulatory Scrutiny:** Maria Santos at Lakewood Regional Bank has been particularly vocal about AI model fairness, emphasizing that any model used in lending decisions must meet strict regulatory standards. Her references to OCC examinations and fair lending requirements indicate this is a top-tier concern for the bank.\n\n**Industry Context:** Bias mitigation is an established priority across the financial services sector, with leading practices including pre-deployment fairness audits and disparate impact testing. This aligns with what Lakewood has communicated.\n\n**Our Readiness:** The Apex Responsible AI practice has relevant experience, having completed fairness audits for three Fortune 500 financial services clients. This positions us well to address the concerns raised.\n\nI\u2019d recommend leading with our bias audit methodology in the next Lakewood meeting.",
+    llmBadRetrievalProblems: [
+      "Confidently says \"Yes\" when the correct answer is \"No\" \u2014 no prospect has directly raised bias as a concern",
+      "Mischaracterizes Santos\u2019s comment: she discussed explainability for regulators, not bias or fairness specifically. The LLM conflated related but distinct concepts because the retrieved context nudged it that way",
+      "Treats our own marketing deck as evidence of client concerns \u2014 the retrieval mixed internal documents with client transcripts, and the LLM couldn\u2019t distinguish the source types",
+      "The industry report about bias practices gets woven in as if prospects referenced it, creating a false narrative of client concern",
+      "The recommendation to \"lead with bias audit methodology\" would confuse Lakewood \u2014 Santos never asked about bias, and pivoting to an unrequested topic signals you weren\u2019t listening",
+      "The most valuable insight \u2014 that bias hasn\u2019t been raised yet and should be proactively introduced \u2014 is completely missed because the LLM was led astray by the wrong context",
+    ],
+    followUps: {}
+  },
+};
+
+const SUGGESTED_QUERIES = Object.keys(SCENARIOS);
+const MODE_META = {
+  optionD: { label: "Smart Search", color: "#0a7c5c", bg: "#e8f5ee", tagline: "NL understanding \u2192 smart retrieval \u2192 synthesis" },
+  searchOnly: { label: "Semantic search only", color: "#6b5510", bg: "#fef8e8", tagline: "Raw embedding match \u2014 no query understanding" },
+  llmBadRetrieval: { label: "LLM + naive retrieval", color: "#9c3a3a", bg: "#fde8e8", tagline: "LLM gets wrong context from poor retrieval" },
+};
+
+function useTypingEffect(text, speed, enabled) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!enabled || !text) { setDisplayed(text || ""); setDone(true); return; }
+    setDisplayed(""); setDone(false);
+    let i = 0;
+    const iv = setInterval(() => { i += 3; if (i >= text.length) { setDisplayed(text); setDone(true); clearInterval(iv); } else setDisplayed(text.slice(0, i)); }, speed || 8);
+    return () => clearInterval(iv);
+  }, [text, speed, enabled]);
+  return [displayed, done];
+}
+
+const SearchIcon = () => React.createElement("svg", {width:18,height:18,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"}, React.createElement("circle",{cx:11,cy:11,r:8}), React.createElement("line",{x1:21,y1:21,x2:16.65,y2:16.65}));
+const ChevronIcon = ({open}) => React.createElement("svg", {width:14,height:14,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",style:{transition:"transform 0.2s",transform:open?"rotate(180deg)":"rotate(0)"}}, React.createElement("polyline",{points:"6 9 12 15 18 9"}));
+const AlertIcon = () => React.createElement("svg", {width:15,height:15,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"}, React.createElement("path",{d:"M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"}), React.createElement("line",{x1:12,y1:9,x2:12,y2:13}), React.createElement("line",{x1:12,y1:17,x2:12.01,y2:17}));
+const SparkleIcon = () => React.createElement("svg", {width:15,height:15,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"}, React.createElement("path",{d:"M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2z"}));
+const NewIcon = () => React.createElement("svg", {width:14,height:14,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"}, React.createElement("line",{x1:12,y1:5,x2:12,y2:19}), React.createElement("line",{x1:5,y1:12,x2:19,y2:12}));
+const DocIcon = () => React.createElement("svg", {width:13,height:13,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:1.5,strokeLinecap:"round"}, React.createElement("path",{d:"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"}), React.createElement("polyline",{points:"14 2 14 8 20 8"}));
+const ArrowIcon = () => React.createElement("svg", {width:13,height:13,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:1.5,strokeLinecap:"round"}, React.createElement("polyline",{points:"9 18 15 12 9 6"}));
+
+function SourceCard({ source, index, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const relColor = source.relevance > 0.7 ? "#0a7c5c" : source.relevance > 0.4 ? "#8a6d0b" : "#9c3a3a";
+  const relBg = source.relevance > 0.7 ? "#e8f5ee" : source.relevance > 0.4 ? "#fef8e8" : "#fde8e8";
+  const relLabel = source.relevance > 0.7 ? "High" : source.relevance > 0.4 ? "Moderate" : "Low";
+  return (
+    <div style={{border:"1px solid #e8e6e1",borderRadius:10,overflow:"hidden"}}>
+      <button onClick={()=>setOpen(!open)} style={{width:"100%",background:open?"#fafaf8":"transparent",border:"none",padding:"11px 16px",cursor:"pointer",display:"flex",alignItems:"flex-start",gap:10,textAlign:"left"}}>
+        <span style={{color:"#94918a",fontSize:11,fontWeight:600,minWidth:16,paddingTop:2}}>{index+1}</span>
+        <div style={{flex:1}}>
+          <div style={{color:"#1a1917",fontSize:13,fontWeight:600,display:"flex",alignItems:"center",gap:5}}><DocIcon />{source.doc}</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:3,flexWrap:"wrap"}}>
+            <span style={{fontSize:12,color:"#6b6963"}}>{source.section}</span>
+            <span style={{fontSize:11,color:"#94918a"}}>{source.date}</span>
+            <span style={{fontSize:10,fontWeight:600,color:relColor,background:relBg,padding:"1px 8px",borderRadius:20}}>{relLabel}</span>
+          </div>
+        </div>
+        <ChevronIcon open={open} />
+      </button>
+      {open && (
+        <div style={{padding:"0 16px 12px 42px",animation:"fadeIn 0.15s"}}>
+          <div style={{fontSize:13,lineHeight:1.75,color:"#3d3b37",background:"#fafaf8",borderRadius:8,padding:"12px 14px",borderLeft:"3px solid #d4d2cc",fontFamily:"'IBM Plex Serif', Georgia, serif"}}>
+            "{source.text}"
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ModeToggle({ mode, setMode }) {
+  return (
+    <div style={{display:"flex",background:"#27261f",borderRadius:9,padding:3,gap:2}}>
+      {["optionD","searchOnly","llmBadRetrieval"].map(m => (
+        <button key={m} onClick={()=>setMode(m)} style={{padding:"6px 12px",borderRadius:7,border:"none",cursor:"pointer",fontSize:11,fontWeight:mode===m?600:400,background:mode===m?"#fff":"transparent",color:mode===m?MODE_META[m].color:"#7a7770",boxShadow:mode===m?"0 1px 3px rgba(0,0,0,0.12)":"none",transition:"all 0.15s",whiteSpace:"nowrap"}}>
+          {MODE_META[m].label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PipelineDiagram({ mode }) {
+  const steps = mode === "optionD"
+    ? [{label:"NL query",clr:"#94918a"},{label:"LLM understands intent",clr:"#0a7c5c"},{label:"Smart retrieval",clr:"#0a7c5c"},{label:"Synthesis + sources",clr:"#0a7c5c"}]
+    : mode === "searchOnly"
+    ? [{label:"NL query",clr:"#94918a"},{label:"Raw embedding",clr:"#9c3a3a"},{label:"Keyword-matched results",clr:"#9c3a3a"},{label:"No synthesis",clr:"#9c3a3a"}]
+    : [{label:"NL query",clr:"#94918a"},{label:"Raw embedding",clr:"#9c3a3a"},{label:"Wrong passages retrieved",clr:"#9c3a3a"},{label:"LLM hallucinates from bad context",clr:"#9c3a3a"}];
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:4,padding:"8px 0",flexWrap:"wrap"}}>
+      {steps.map((s,i) => (
+        <span key={i} style={{display:"flex",alignItems:"center",gap:4}}>
+          {i>0 && <span style={{color:"#d4d2cc",fontSize:10}}><ArrowIcon /></span>}
+          <span style={{fontSize:11,fontWeight:500,color:s.clr,background:s.clr==="#94918a"?"#f0efe9":s.clr==="#0a7c5c"?"#e8f5ee":"#fde8e8",padding:"3px 10px",borderRadius:6}}>{s.label}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SearchOnlyView({ result }) {
+  const passages = result.searchOnlyPassages || result.sources;
+  return (
+    <div style={{animation:"fadeIn 0.3s"}}>
+      <div style={{background:"#fef8e8",borderRadius:12,border:"1px solid #f0dda0",padding:"14px 18px",marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:600,color:"#6b5510",marginBottom:6,display:"flex",alignItems:"center",gap:6}}><AlertIcon /> Why these results miss the mark</div>
+        <div style={{fontSize:13,color:"#5c4a10",lineHeight:1.65}}>{result.searchOnlyExplanation}</div>
+      </div>
+      <div style={{fontSize:11,fontWeight:600,color:"#94918a",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Passages returned ({passages.length})</div>
+      <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:16}}>
+        {passages.map((s,i) => <SourceCard key={i} source={s} index={i} defaultOpen={i<2} />)}
+      </div>
+      <div style={{background:"#fef8e8",borderRadius:12,border:"1px solid #f0dda0",padding:"14px 18px"}}>
+        <div style={{fontSize:13,fontWeight:600,color:"#6b5510",marginBottom:8}}>What went wrong</div>
+        {result.searchOnlyProblems.map((p,i) => (
+          <div key={i} style={{fontSize:13,color:"#5c4a10",lineHeight:1.6,padding:"3px 0 3px 18px",position:"relative"}}>
+            <span style={{position:"absolute",left:4,top:8,width:5,height:5,borderRadius:"50%",background:"#c8a050"}} />{p}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LLMBadRetrievalView({ result }) {
+  const [typed, done] = useTypingEffect(result.llmBadRetrievalResponse, 8, true);
+  return (
+    <div style={{animation:"fadeIn 0.3s"}}>
+      <div style={{background:"#fde8e8",borderRadius:12,border:"1px solid #f5c4c4",padding:"14px 18px",marginBottom:16}}>
+        <div style={{fontSize:13,fontWeight:600,color:"#7a2828",marginBottom:4,display:"flex",alignItems:"center",gap:6}}><AlertIcon /> What happens here</div>
+        <div style={{fontSize:13,color:"#5c2020",lineHeight:1.6}}>The embedding doesn't understand the query's intent, so it retrieves the wrong passages (vendor matrices, our own proposals, industry reports instead of the actual client conversation). The LLM then confidently synthesizes an answer from this wrong context — producing a plausible but dangerously incorrect analysis.</div>
+      </div>
+      <div style={{background:"#fff",borderRadius:14,border:"1px solid #e8e6e1",overflow:"hidden",marginBottom:16}}>
+        <div style={{padding:"14px 20px 0",display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,color:"#9c3a3a"}}><AlertIcon /> LLM answer (from poorly retrieved context)</div>
+        <div style={{padding:"14px 20px 20px",fontSize:14.5,lineHeight:1.8,color:"#2c2a27",whiteSpace:"pre-wrap"}}>
+          {typed}{!done && <span style={{display:"inline-block",width:2,height:16,background:"#9c3a3a",marginLeft:2,animation:"pulse 0.8s infinite",verticalAlign:"text-bottom"}} />}
+        </div>
+      </div>
+      {done && (
+        <div style={{background:"#fde8e8",borderRadius:12,border:"1px solid #f5c4c4",padding:"16px 18px",animation:"fadeIn 0.3s"}}>
+          <div style={{fontSize:13,fontWeight:600,color:"#7a2828",marginBottom:8,display:"flex",alignItems:"center",gap:6}}><AlertIcon /> Why this is dangerous</div>
+          {result.llmBadRetrievalProblems.map((p,i) => (
+            <div key={i} style={{fontSize:13,color:"#5c2020",lineHeight:1.6,padding:"3px 0 3px 18px",position:"relative"}}>
+              <span style={{position:"absolute",left:4,top:8,width:5,height:5,borderRadius:"50%",background:"#d45c5c"}} />{p}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [query, setQuery] = useState("");
+  const [followUpQuery, setFollowUpQuery] = useState("");
+  const [currentResult, setCurrentResult] = useState(null);
+  const [thread, setThread] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [animateIn, setAnimateIn] = useState(false);
+  const [currentScenario, setCurrentScenario] = useState(null);
+  const [mode, setMode] = useState("optionD");
+  const resultsRef = useRef(null);
+
+  const summaryText = currentResult?.confidence === "low" ? currentResult.lowConfidenceMessage : currentResult?.summary;
+  const [typedSummary, typingDone] = useTypingEffect(summaryText, 8, showResults && mode === "optionD");
+
+  const executeSearch = useCallback((searchText, isFollowUp) => {
+    setIsSearching(true); setShowResults(false); setAnimateIn(false);
+    setTimeout(() => {
+      let result = null, scenario = null;
+      if (isFollowUp && currentScenario?.followUps?.[searchText]) { result = currentScenario.followUps[searchText]; scenario = result; }
+      else { result = SCENARIOS[searchText]; scenario = result; }
+      if (result) { setCurrentResult(result); setCurrentScenario(scenario); setThread(prev => isFollowUp ? [...prev, searchText] : [searchText]); }
+      setIsSearching(false); setShowResults(true);
+      setTimeout(() => setAnimateIn(true), 50);
+      setTimeout(() => { if(resultsRef.current) resultsRef.current.scrollIntoView({behavior:"smooth",block:"start"}); }, 100);
+    }, mode === "searchOnly" ? 500 : 1600);
+  }, [currentScenario, mode]);
+
+  const handleSearch = (e) => { if(e) e.preventDefault(); if (query.trim()) executeSearch(query.trim(), false); };
+  const handleFollowUp = (e) => { if(e) e.preventDefault(); if (followUpQuery.trim()) { const q = followUpQuery.trim(); setFollowUpQuery(""); executeSearch(q, true); } };
+  const handleNewSearch = () => { setCurrentResult(null); setCurrentScenario(null); setThread([]); setQuery(""); setFollowUpQuery(""); setShowResults(false); setAnimateIn(false); window.scrollTo({top:0,behavior:"smooth"}); };
+
+  const availableFollowUps = mode === "optionD" && currentScenario?.followUps ? Object.keys(currentScenario.followUps) : [];
+
+  return (
+    <div style={{minHeight:"100vh",background:"#f5f4f0"}}>
+      <header style={{background:"#1a1917",borderBottom:"1px solid #2a2926"}}>
+        <div style={{maxWidth:880,margin:"0 auto",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:28,height:28,borderRadius:7,background:"linear-gradient(135deg, #c8a55a, #8a6d2b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"#1a1917"}}>J</div>
+            <div>
+              <div style={{fontSize:14,fontWeight:600,color:"#f0efe9"}}>Jindo</div>
+              <div style={{fontSize:10,color:"#7a7770"}}>AI—Powered Meeting Intelligence</div>
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <ModeToggle mode={mode} setMode={setMode} />
+            {showResults && <button onClick={handleNewSearch} style={{display:"flex",alignItems:"center",gap:5,background:"#2a2926",border:"1px solid #3a3936",color:"#c8c5bd",fontSize:12,fontWeight:500,padding:"6px 12px",borderRadius:8,cursor:"pointer"}} onMouseEnter={e=>e.currentTarget.style.background="#3a3936"} onMouseLeave={e=>e.currentTarget.style.background="#2a2926"}><NewIcon /> New</button>}
+          </div>
+        </div>
+      </header>
+
+      <main style={{maxWidth:880,margin:"0 auto",padding:"0 24px"}}>
+        {!showResults && !isSearching && (
+          <div style={{paddingTop:56,paddingBottom:16,animation:"fadeIn 0.5s"}}>
+            <div style={{fontSize:11,fontWeight:600,color:MODE_META[mode].color,background:MODE_META[mode].bg,display:"inline-flex",padding:"4px 12px",borderRadius:20,marginBottom:14,letterSpacing:"0.03em"}}>{MODE_META[mode].tagline}</div>
+            <h1 style={{fontSize:28,fontWeight:300,color:"#1a1917",margin:"0 0 6px",letterSpacing:"-0.02em",lineHeight:1.25}}>
+              {mode==="optionD" ? <span>Search client <strong>intelligence</strong></span> : mode==="searchOnly" ? <span>Semantic search <strong>without NL understanding</strong></span> : <span>LLM synthesis <strong>from wrong context</strong></span>}
+            </h1>
+            <p style={{fontSize:14,color:"#7a7770",margin:"0 0 20px",lineHeight:1.6,maxWidth:600}}>
+              {mode==="optionD" ? "The LLM understands your question, retrieves the right passages, synthesizes an answer, and shows sources for verification." : mode==="searchOnly" ? "The query is embedded directly without NL understanding. The embedding model matches on surface keywords, not intent \u2014 so it often retrieves the wrong documents entirely." : "The embedding retrieves the wrong passages (same as search-only). Then the LLM confidently synthesizes an answer from those wrong passages \u2014 producing plausible but dangerous misinformation."}
+            </p>
+          </div>
+        )}
+
+        <div style={{position:showResults||isSearching?"sticky":"relative",top:showResults||isSearching?0:"auto",zIndex:10,background:"#f5f4f0",paddingTop:showResults||isSearching?14:0,paddingBottom:10}}>
+          <form onSubmit={handleSearch}>
+            <div style={{display:"flex",alignItems:"center",background:"#fff",border:"1px solid #d4d2cc",borderRadius:14,padding:"4px 6px 4px 16px",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+              <span style={{color:"#94918a",display:"flex",marginRight:8,flexShrink:0}}><SearchIcon /></span>
+              <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ask about client meetings, concerns, or findings..."
+                style={{flex:1,border:"none",outline:"none",fontSize:15,padding:"11px 0",background:"transparent",color:"#1a1917"}}
+                onFocus={e=>e.target.parentElement.style.borderColor="#8a6d2b"} onBlur={e=>e.target.parentElement.style.borderColor="#d4d2cc"} />
+              <button type="submit" style={{background:"#1a1917",color:"#f0efe9",border:"none",borderRadius:10,padding:"9px 18px",fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0}}>Search</button>
+            </div>
+          </form>
+        </div>
+
+        {!showResults && !isSearching && (
+          <div style={{animation:"fadeIn 0.4s 0.1s both"}}>
+            <div style={{fontSize:11,fontWeight:600,color:"#94918a",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.06em"}}>Try an example \u2014 then switch modes to compare</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {SUGGESTED_QUERIES.map(q => (
+                <button key={q} onClick={()=>{setQuery(q);executeSearch(q,false);}}
+                  style={{display:"flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid #e8e6e1",borderRadius:10,padding:"11px 16px",cursor:"pointer",textAlign:"left",fontSize:13.5,color:"#3d3b37",transition:"all 0.15s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#c8a55a";e.currentTarget.style.background="#fdfcfa";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#e8e6e1";e.currentTarget.style.background="#fff";}}>
+                  <span style={{color:"#c8a55a",flexShrink:0}}><SearchIcon /></span>{q}
+                </button>
+              ))}
+            </div>
+            <div style={{marginTop:20,padding:"14px 18px",background:"#fff",borderRadius:12,border:"1px solid #e8e6e1"}}>
+              <div style={{fontSize:11,fontWeight:600,color:"#94918a",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.06em"}}>Demo walkthrough</div>
+              <div style={{fontSize:13,color:"#6b6963",lineHeight:1.65}}>
+                Run a query in <strong style={{color:"#0a7c5c"}}>Smart Search</strong> first. Then click <strong>New</strong> and run the same query in <strong style={{color:"#6b5510"}}>Semantic search only</strong> to see how the embedding misunderstands the question. Then try <strong style={{color:"#9c3a3a"}}>LLM + naive retrieval</strong> to see the LLM answer from those wrong passages.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isSearching && (
+          <div style={{padding:"50px 0",textAlign:"center",animation:"fadeIn 0.2s"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"#fff",border:"1px solid #e8e6e1",borderRadius:12,padding:"12px 22px"}}>
+              <div style={{display:"flex",gap:4}}>{[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:MODE_META[mode].color,animation:"pulse 1.2s ease-in-out "+i*0.2+"s infinite"}} />)}</div>
+              <span style={{fontSize:13,color:"#6b6963",fontWeight:500}}>
+                {mode==="searchOnly"?"Embedding and searching...":mode==="llmBadRetrieval"?"Retrieving and generating...":"Understanding, retrieving, synthesizing..."}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {showResults && currentResult && (
+          <div ref={resultsRef} style={{paddingBottom:60,animation:animateIn?"slideUp 0.35s":"none",opacity:animateIn?1:0}}>
+            <PipelineDiagram mode={mode} />
+
+            {thread.length > 0 && mode === "optionD" && (
+              <div style={{display:"flex",alignItems:"center",gap:5,padding:"2px 0 8px",flexWrap:"wrap"}}>
+                {thread.map((t,i) => (
+                  <span key={i} style={{display:"flex",alignItems:"center",gap:4}}>
+                    {i>0 && <ArrowIcon />}
+                    <span style={{fontSize:12,color:i===thread.length-1?"#1a1917":"#94918a",fontWeight:i===thread.length-1?600:400,maxWidth:280,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {mode === "optionD" && (
+              <div>
+                <div style={{background:"#fff",borderRadius:14,border:"1px solid #e8e6e1",marginBottom:16,overflow:"hidden"}}>
+                  <div style={{padding:"14px 20px 0",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    {currentResult.confidence==="high" && <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,color:"#8a6d2b"}}><SparkleIcon /> AI summary</span>}
+                    {currentResult.confidence==="low" && <span style={{display:"flex",alignItems:"center",gap:5,fontSize:12,fontWeight:600,color:"#9c3a3a"}}><AlertIcon /> Low confidence</span>}
+                    {currentResult.searchQuery===null && <span style={{fontSize:11,color:"#94918a",background:"#f0efe9",padding:"2px 8px",borderRadius:20}}>From thread context</span>}
+                    {currentResult.searchQuery && thread.length>1 && <span style={{fontSize:11,color:"#94918a",background:"#f0efe9",padding:"2px 8px",borderRadius:20}}>Searched: "{currentResult.searchQuery}"</span>}
+                  </div>
+                  {currentResult.confidence==="low" && <div style={{margin:"12px 20px 0",padding:"10px 14px",background:"#fde8e8",borderRadius:8,border:"1px solid #f5c4c4",fontSize:12,color:"#7a2828",lineHeight:1.5}}>Low relevance. The information below may not directly answer your question.</div>}
+                  <div style={{padding:"14px 20px 20px",fontSize:14.5,lineHeight:1.8,color:"#2c2a27",whiteSpace:"pre-wrap"}}>
+                    {typedSummary}{!typingDone && <span style={{display:"inline-block",width:2,height:16,background:"#c8a55a",marginLeft:2,animation:"pulse 0.8s infinite",verticalAlign:"text-bottom"}} />}
+                  </div>
+                </div>
+                {currentResult.sources && (
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,fontWeight:600,color:"#94918a",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Sources ({currentResult.sources.length})</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:7}}>{currentResult.sources.map((s,i)=><SourceCard key={i} source={s} index={i} defaultOpen={i===0} />)}</div>
+                  </div>
+                )}
+                {currentResult.sources===null && <div style={{padding:"14px 18px",background:"#f0efe9",borderRadius:10,marginBottom:16,fontSize:13,color:"#7a7770"}}>Answered from thread context. Original sources still apply.</div>}
+                {typingDone && (
+                  <div style={{background:"#fff",borderRadius:14,border:"1px solid #e8e6e1",padding:"14px 18px",animation:"fadeIn 0.3s"}}>
+                    <div style={{fontSize:11,fontWeight:600,color:"#94918a",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.06em"}}>Follow up</div>
+                    <form onSubmit={handleFollowUp}>
+                      <div style={{display:"flex",gap:8}}>
+                        <input value={followUpQuery} onChange={e=>setFollowUpQuery(e.target.value)} placeholder="Refine or ask a follow-up..."
+                          style={{flex:1,border:"1px solid #e8e6e1",borderRadius:10,padding:"9px 14px",fontSize:13.5,outline:"none",background:"#fafaf8",color:"#1a1917"}}
+                          onFocus={e=>e.target.style.borderColor="#c8a55a"} onBlur={e=>e.target.style.borderColor="#e8e6e1"} />
+                        <button type="submit" style={{background:"#f0efe9",color:"#3d3b37",border:"1px solid #d4d2cc",borderRadius:10,padding:"9px 16px",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}
+                          onMouseEnter={e=>{e.target.style.background="#1a1917";e.target.style.color="#f0efe9";}}
+                          onMouseLeave={e=>{e.target.style.background="#f0efe9";e.target.style.color="#3d3b37";}}>Follow up</button>
+                      </div>
+                    </form>
+                    {availableFollowUps.length > 0 && (
+                      <div style={{marginTop:8,display:"flex",gap:5,flexWrap:"wrap"}}>
+                        {availableFollowUps.map(q => (
+                          <button key={q} onClick={()=>{setFollowUpQuery(q);executeSearch(q,true);}}
+                            style={{background:"#fafaf8",border:"1px solid #e8e6e1",borderRadius:8,padding:"5px 11px",fontSize:12,color:"#6b6963",cursor:"pointer",transition:"all 0.15s"}}
+                            onMouseEnter={e=>{e.currentTarget.style.borderColor="#c8a55a";e.currentTarget.style.color="#3d3b37";}}
+                            onMouseLeave={e=>{e.currentTarget.style.borderColor="#e8e6e1";e.currentTarget.style.color="#6b6963";}}>{q}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {mode === "searchOnly" && <SearchOnlyView result={currentResult} />}
+            {mode === "llmBadRetrieval" && currentResult.llmBadRetrievalResponse && <LLMBadRetrievalView result={currentResult} />}
+            {mode === "llmBadRetrieval" && !currentResult.llmBadRetrievalResponse && (
+              <div style={{padding:"30px 20px",background:"#fff",borderRadius:14,border:"1px solid #e8e6e1",textAlign:"center",fontSize:14,color:"#7a7770"}}>Comparison not available for this query. Try the first example.</div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById("root"));
+</script>
+</body>
+</html>

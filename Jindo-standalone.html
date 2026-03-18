@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jindo - Meeting Intelligence</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const JindoLogo = () => (
+      <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 30 L20 70 L40 85 L40 15 Z" fill="#ff6b35"/>
+        <path d="M40 25 L60 35 L60 65 L40 75 Z" fill="#ff6b35"/>
+        <path d="M60 40 L75 47 L75 53 L60 60 Z" fill="#ff6b35"/>
+        <circle cx="82" cy="50" r="6" fill="#ff6b35"/>
+        <circle cx="90" cy="45" r="3" fill="#ff6b35"/>
+        <circle cx="90" cy="55" r="3" fill="#ff6b35"/>
+      </svg>
+    );
+
+    // Lucide Icons
+    const Search = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+    );
+
+    const ChevronDown = ({ className = "" }) => (
+      <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    );
+
+    const ChevronRight = ({ className = "" }) => (
+      <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    );
+
+    const RefreshCw = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    );
+
+    const Copy = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+    );
+
+    const Download = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    );
+
+    const Star = ({ filled, className = "" }) => (
+      <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+    );
+
+    const CONTACTS = [
+      { id: 'unassigned', name: 'Unassigned', expanded: false },
+      { id: '951elcajon', name: '951ElCajon', expanded: false },
+      { id: 'buildblueshift', name: 'A2: BuildBlueShift', expanded: false },
+      { id: 'eka', name: 'A2: Eka', expanded: false },
+      { id: 'jidoka', name: 'A2: Jidoka', expanded: false },
+      { id: 'misc', name: 'A2: Misc', expanded: false },
+      { id: 'safari', name: 'A2: Safari', expanded: false },
+      { id: 'sanjaydastoor', name: 'A2: SanjayDastoor', expanded: false },
+      { id: 'drishti', name: 'Drishti', expanded: false },
+      { id: 'abhay', name: 'J: Abhay Srivastava', expanded: false },
+      { id: 'ashok', name: 'J: Ashok Kanagal', expanded: false },
+      { id: 'cumberland', name: 'J: Cumberland', expanded: false },
+      { id: 'david', name: 'J: David Bernardi', expanded: false },
+      { id: 'edjohn', name: 'J: Ed + John', expanded: false },
+    ];
+
+    const MEETING_DATA = {
+      title: "Discovery Call with Silicon Foundry - Jindo Product Demo and Integration Discussion",
+      date: "March 13, 2026, 9:59 AM",
+      duration: "1 hour 7 minutes",
+      attendees: [
+        { name: "Prasad Akella", company: "Jindo", percentage: "45%", role: "Founder/CEO" },
+        { name: "Melvin Lai", company: "Silicon Foundry (AT Kearney)", percentage: "35%", role: "Head of Technology Tools" },
+        { name: "Mark Minnell", company: "Silicon Foundry (AT Kearney)", percentage: "5%", role: "Introduced participants then dropped off" },
+        { name: "Anurag (Raghu)", company: "Jindo", percentage: "10%", role: "Co-founder (joined mid-call while driving)" },
+        { name: "Anant", company: "Jindo", percentage: "5%", role: "Co-founder/Product Lead" },
+      ],
+      overview: "Mark Minnell introduced Prasad Akella from Jindo to Melvin Lai from Silicon Foundry to explore potential collaboration on AI-powered meeting intelligence apps. Prasad demonstrated Jindo's layered intelligence approach (L0-L5) that aggregates conversations across multiple meetings to extract themes, institutional knowledge, and actionable insights beyond single-meeting summaries like Granola provides. Melvin shared Silicon Foundry's current workflow using Granola, Copper CRM, and Notion, highlighting gaps in data integration and manual processes. Both parties identified strong alignment on solving institutional knowledge capture and agreed to a follow-up meeting with Mark to scope integration requirements for Copper CRM and Notion, potentially using historical Granola transcripts as proof of concept."
+    };
+
+    function JindoApp() {
+      const [searchQuery, setSearchQuery] = useState('melvin');
+      const [activeTab, setActiveTab] = useState('SUMMARY');
+      const [contacts, setContacts] = useState(CONTACTS);
+      const [completenessRating, setCompletenessRating] = useState(0);
+      const [accuracyRating, setAccuracyRating] = useState(0);
+      const [feedback, setFeedback] = useState('');
+
+      const toggleContact = (id) => {
+        setContacts(contacts.map(c => 
+          c.id === id ? { ...c, expanded: !c.expanded } : c
+        ));
+      };
+
+      return (
+        <div className="flex h-screen bg-gray-50 font-sans">
+          {/* Left Sidebar */}
+          <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Contact</h2>
+                <div className="flex gap-2">
+                  <button className="text-sm text-blue-600 hover:text-blue-700">Add</button>
+                  <button className="text-sm text-blue-600 hover:text-blue-700">Manage</button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto">
+              {contacts.map(contact => (
+                <div key={contact.id} className="border-b border-gray-100">
+                  <button
+                    onClick={() => toggleContact(contact.id)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-sm font-medium">{contact.name}</span>
+                    <ChevronDown className={`transition-transform ${contact.expanded ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+            {/* Top Bar */}
+            <div className="bg-white border-b border-gray-200 px-6 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <JindoLogo />
+                </div>
+                
+                <div className="flex-1 max-w-2xl mx-8">
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <Search />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <button className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 transition-colors">
+                    NEW MEETING
+                  </button>
+                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-sm font-semibold">
+                    PA
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Meeting Content */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-7xl mx-auto px-6 py-6">
+                <div className="flex gap-6">
+                  {/* Main Content Area */}
+                  <div className="flex-1">
+                    <div className="mb-4">
+                      <button className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-3">
+                        <ChevronRight className="rotate-180" />
+                        <span>Home</span>
+                      </button>
+                      
+                      <h1 className="text-2xl font-semibold mb-2">{MEETING_DATA.title}</h1>
+                      <p className="text-sm text-gray-600">
+                        {MEETING_DATA.date}, Duration: {MEETING_DATA.duration}
+                      </p>
+                    </div>
+
+                    {/* Tabs and Actions */}
+                    <div className="border-b border-gray-200 mb-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-6">
+                          {['SUMMARY', 'NOTES & ATTACHMENTS', 'TRANSCRIPT'].map(tab => (
+                            <button
+                              key={tab}
+                              onClick={() => setActiveTab(tab)}
+                              className={`pb-3 text-sm font-medium transition-colors ${
+                                activeTab === tab
+                                  ? 'text-blue-600 border-b-2 border-blue-600'
+                                  : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                            >
+                              {tab}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <button className="p-2 hover:bg-gray-100 rounded transition-colors">
+                            <RefreshCw />
+                          </button>
+                          <button className="p-2 hover:bg-gray-100 rounded transition-colors">
+                            <Copy />
+                          </button>
+                          <button className="p-2 hover:bg-gray-100 rounded transition-colors">
+                            <Download />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Template Selector */}
+                    <div className="mb-6">
+                      <button className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md flex items-center justify-between hover:bg-gray-50 transition-colors">
+                        <span className="text-sm text-blue-600 font-medium">Default - Generic</span>
+                        <ChevronDown />
+                      </button>
+                    </div>
+
+                    {/* Summary Content */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <h2 className="text-lg font-semibold mb-4">SUMMARY</h2>
+                      
+                      <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-3">Meeting Attendees</h3>
+                        <ul className="space-y-2">
+                          {MEETING_DATA.attendees.map((attendee, index) => (
+                            <li key={index} className="text-sm">
+                              <span className="font-semibold">{attendee.name}</span>
+                              <span className="text-gray-600">
+                                , {attendee.company}, {attendee.percentage} - {attendee.role}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-3">Meeting Overview</h3>
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {MEETING_DATA.overview}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Sidebar - Feedback */}
+                  <div className="w-80">
+                    <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-6">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-4">Your feedback</h3>
+                      
+                      <div className="mb-4">
+                        <label className="text-sm text-gray-600 mb-2 block">Completeness of summary</label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <button
+                              key={star}
+                              onClick={() => setCompletenessRating(star)}
+                              className="transition-colors"
+                            >
+                              <Star
+                                filled={star <= completenessRating}
+                                className={star <= completenessRating ? 'text-gray-400' : 'text-gray-300'}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="text-sm text-gray-600 mb-2 block">Accuracy of summary</label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <button
+                              key={star}
+                              onClick={() => setAccuracyRating(star)}
+                              className="transition-colors"
+                            >
+                              <Star
+                                filled={star <= accuracyRating}
+                                className={star <= accuracyRating ? 'text-gray-400' : 'text-gray-300'}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="text-sm text-gray-600 mb-2 block">How can we improve?</label>
+                        <textarea
+                          value={feedback}
+                          onChange={(e) => setFeedback(e.target.value)}
+                          placeholder="Share inaccuracies and product/ improvement ideas."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          rows={4}
+                        />
+                      </div>
+
+                      <button className="w-full py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors">
+                        SAVE
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<JindoApp />, document.getElementById('root'));
+  </script>
+</body>
+</html>
