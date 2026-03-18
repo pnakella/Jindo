@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jindo - Meeting Intelligence</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-5 { gap: 1.25rem; }
+    .gap-6 { gap: 1.5rem; }
+    .gap-8 { gap: 2rem; }
+    .p-2 { padding: 0.5rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .p-6 { padding: 1.5rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .w-full { width: 100%; }
+    .h-screen { height: 100vh; }
+    .flex-1 { flex: 1; }
+    .text-sm { font-size: 0.875rem; }
+    .text-base { font-size: 1rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .rounded { border-radius: 0.25rem; }
+    .rounded-md { border-radius: 0.375rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .border { border-width: 1px; }
+    .border-b { border-bottom-width: 1px; }
+    .overflow-y-auto { overflow-y: auto; }
+    .cursor-pointer { cursor: pointer; }
+    .transition-colors { transition: color 0.15s, background-color 0.15s, border-color 0.15s; }
+    .bg-white { background-color: #ffffff; }
+    .bg-gray-50 { background-color: #f9fafb; }
+    .bg-gray-100 { background-color: #f3f4f6; }
+    .bg-gray-200 { background-color: #e5e7eb; }
+    .bg-blue-600 { background-color: #2563eb; }
+    .border-gray-100 { border-color: #f3f4f6; }
+    .border-gray-200 { border-color: #e5e7eb; }
+    .border-gray-300 { border-color: #d1d5db; }
+    .border-blue-600 { border-color: #2563eb; }
+    .text-gray-400 { color: #9ca3af; }
+    .text-gray-500 { color: #6b7280; }
+    .text-gray-600 { color: #4b5563; }
+    .text-gray-700 { color: #374151; }
+    .text-blue-600 { color: #2563eb; }
+    .text-blue-700 { color: #1d4ed8; }
+    .text-purple-600 { color: #9333ea; }
+    .text-purple-700 { color: #7e22ce; }
+    .text-white { color: #ffffff; }
+    .text-orange-500 { color: #f97316; }
+    button { background: none; border: none; cursor: pointer; font-family: inherit; }
+    input, textarea { font-family: inherit; }
+    input:focus, textarea:focus, button:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+    .hover-bg-gray-50:hover { background-color: #f9fafb; }
+    .hover-bg-gray-100:hover { background-color: #f3f4f6; }
+    .hover-bg-blue-700:hover { background-color: #1d4ed8; }
+    .hover-text-blue-700:hover { color: #1d4ed8; }
+    .hover-text-gray-700:hover { color: #374151; }
+    .hover-text-gray-800:hover { color: #1f2937; }
+    .hover-text-purple-700:hover { color: #7e22ce; }
+    .grid { display: grid; }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .space-y-2 > * + * { margin-top: 0.5rem; }
+    .space-y-3 > * + * { margin-top: 0.75rem; }
+    .sticky { position: sticky; }
+    .top-6 { top: 1.5rem; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .resize-none { resize: none; }
+    .leading-relaxed { line-height: 1.625; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const JindoLogo = () => (
+      <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 30 L20 70 L40 85 L40 15 Z" fill="#ff6b35"/>
+        <path d="M40 25 L60 35 L60 65 L40 75 Z" fill="#ff6b35"/>
+        <path d="M60 40 L75 47 L75 53 L60 60 Z" fill="#ff6b35"/>
+        <circle cx="82" cy="50" r="6" fill="#ff6b35"/>
+        <circle cx="90" cy="45" r="3" fill="#ff6b35"/>
+        <circle cx="90" cy="55" r="3" fill="#ff6b35"/>
+      </svg>
+    );
+
+    const Search = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+    );
+
+    const ChevronDown = ({ rotated }) => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{transform: rotated ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s'}}>
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    );
+
+    const ChevronRight = ({ rotated }) => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{transform: rotated ? 'rotate(180deg)' : 'none'}}>
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    );
+
+    const RefreshCw = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    );
+
+    const Copy = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+    );
+
+    const Download = () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    );
+
+    const Star = ({ filled }) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+    );
+
+    const CONTACTS = [
+      { id: 'unassigned', name: 'Unassigned' },
+      { id: 'cindy', name: 'Cindy Johnson' },
+      { id: 'robert', name: 'Robert King' },
+      { id: 'alicia', name: 'Alicia Patel' },
+      { id: 'jan', name: 'Jan Doe' },
+      { id: 'mia', name: 'Mia Flores' },
+    ];
+
+    const MEETING_DATA = {
+      title: "Discovery Call with Silicon Foundry - Jindo Product Demo and Integration Discussion",
+      date: "March 13, 2026, 9:59 AM",
+      duration: "1 hour 7 minutes",
+      attendees: [
+        { name: "Prasad Akella", company: "Jindo", percentage: "45%", role: "Founder/CEO" },
+        { name: "Melvin Lai", company: "Silicon Foundry (AT Kearney)", percentage: "35%", role: "Head of Technology Tools" },
+        { name: "Mark Minnell", company: "Silicon Foundry (AT Kearney)", percentage: "5%", role: "Introduced participants then dropped off" },
+        { name: "Anurag (Raghu)", company: "Jindo", percentage: "10%", role: "Co-founder (joined mid-call while driving)" },
+        { name: "Anant", company: "Jindo", percentage: "5%", role: "Co-founder/Product Lead" },
+      ],
+      overview: "Mark Minnell introduced Prasad Akella from Jindo to Melvin Lai from Silicon Foundry to explore potential collaboration on AI-powered meeting intelligence apps. Prasad demonstrated Jindo's layered intelligence approach (L0-L5) that aggregates conversations across multiple meetings to extract themes, institutional knowledge, and actionable insights beyond single-meeting summaries like Granola provides."
+    };
+
+    const THEMES_DATA = {
+      myMeetings: [
+        { theme: "Clients are asking whether to increase cash positions following the December Fed meeting", count: "5x" },
+        { theme: "Clients are accelerating Roth conversions ahead of expected 2026 tax bracket resets", count: "5x" },
+        { theme: "Multiple clients want to diversify out of concentrated tech holdings after the latest earnings volatility", count: "3x" },
+      ],
+      firmMeetings: [
+        { theme: "Clients are proactively asking how the expiration of tax cuts will impact their 2026 returns.", count: "11x" },
+        { theme: "FDIC protection limits are under scrutiny as clients want reassurance about cash security.", count: "10x" },
+        { theme: "Retirees are reevaluating withdrawal rates due to the recent 12% spike in healthcare premiums", count: "8x" },
+      ]
+    };
+
+    function AllMeetingThemesView({ onViewMeeting }) {
+      const [themesTab, setThemesTab] = useState('ALL_THEMES');
+
+      return (
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div style={{maxWidth: '1280px', margin: '0 auto'}} className="px-6 py-6">
+            <div className="mb-6">
+              <div className="flex gap-8 border-b border-gray-200">
+                <button
+                  onClick={() => { setThemesTab('RECENT'); onViewMeeting(); }}
+                  className="text-sm font-medium transition-colors"
+                  style={{
+                    paddingBottom: '0.75rem',
+                    color: themesTab === 'RECENT' ? '#2563eb' : '#6b7280',
+                    borderBottom: themesTab === 'RECENT' ? '2px solid #2563eb' : 'none'
+                  }}
+                >
+                  RECENT MEETINGS
+                </button>
+                <button
+                  onClick={() => setThemesTab('ALL_THEMES')}
+                  className="flex items-center gap-2 text-sm font-medium transition-colors"
+                  style={{
+                    paddingBottom: '0.75rem',
+                    color: themesTab === 'ALL_THEMES' ? '#2563eb' : '#6b7280',
+                    borderBottom: themesTab === 'ALL_THEMES' ? '2px solid #2563eb' : 'none'
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  ALL MEETING THEMES
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <button className="px-4 py-2 border border-gray-300 rounded-md bg-white flex items-center gap-2 hover-bg-gray-50 transition-colors" style={{minWidth: '200px', justifyContent: 'space-between'}}>
+                <span className="text-sm font-medium text-gray-600">JUNE 2025</span>
+                <ChevronDown />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span style={{fontSize: '1.25rem'}}>🎙️</span>
+                  <h3 className="text-base font-semibold">My Meetings</h3>
+                  <button className="text-sm text-blue-600 hover-text-blue-700">(View 13 results)</button>
+                </div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Themes Observed</h4>
+                <ul className="space-y-3">
+                  {THEMES_DATA.myMeetings.map((item, i) => (
+                    <li key={i} className="flex gap-2 text-sm" style={{alignItems: 'flex-start'}}>
+                      <span className="text-gray-400" style={{marginTop: '0.25rem'}}>•</span>
+                      <span className="flex-1 text-gray-700">
+                        {item.theme}{' '}
+                        <span className="text-blue-600 font-medium">({item.count})</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span style={{fontSize: '1.25rem'}}>🎙️</span>
+                  <h3 className="text-base font-semibold">My Firm's Meetings</h3>
+                  <button className="text-sm text-blue-600 hover-text-blue-700">(View 22 results)</button>
+                </div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Themes Observed</h4>
+                <ul className="space-y-3">
+                  {THEMES_DATA.firmMeetings.map((item, i) => (
+                    <li key={i} className="flex gap-2 text-sm" style={{alignItems: 'flex-start'}}>
+                      <span className="text-gray-400" style={{marginTop: '0.25rem'}}>•</span>
+                      <span className="flex-1 text-gray-700">
+                        {item.theme}{' '}
+                        <span className="text-blue-600 font-medium">({item.count})</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function MeetingDetailView({ onGoHome }) {
+      const [activeTab, setActiveTab] = useState('SUMMARY');
+      const [completenessRating, setCompletenessRating] = useState(0);
+      const [accuracyRating, setAccuracyRating] = useState(0);
+      const [feedback, setFeedback] = useState('');
+
+      return (
+        <div className="flex-1 overflow-y-auto">
+          <div style={{maxWidth: '1280px', margin: '0 auto'}} className="px-6 py-6">
+            <div className="flex gap-6">
+              <div className="flex-1">
+                <div className="mb-4">
+                  <button onClick={onGoHome} className="flex items-center gap-1 text-sm text-blue-600 hover-text-blue-700 mb-3">
+                    <ChevronRight rotated={true} />
+                    <span>Home</span>
+                  </button>
+                  <h1 className="text-2xl font-semibold mb-2">{MEETING_DATA.title}</h1>
+                  <p className="text-sm text-gray-600">{MEETING_DATA.date}, Duration: {MEETING_DATA.duration}</p>
+                </div>
+
+                <div className="border-b border-gray-200 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-6">
+                      {['SUMMARY', 'NOTES & ATTACHMENTS', 'TRANSCRIPT'].map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveTab(tab)}
+                          className="text-sm font-medium transition-colors"
+                          style={{
+                            paddingBottom: '0.75rem',
+                            color: activeTab === tab ? '#2563eb' : '#6b7280',
+                            borderBottom: activeTab === tab ? '2px solid #2563eb' : 'none'
+                          }}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button className="p-2 hover-bg-gray-100 rounded transition-colors"><RefreshCw /></button>
+                      <button className="p-2 hover-bg-gray-100 rounded transition-colors"><Copy /></button>
+                      <button className="p-2 hover-bg-gray-100 rounded transition-colors"><Download /></button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <button className="w-full px-4 py-2 border border-gray-300 rounded-md flex items-center justify-between hover-bg-gray-50 transition-colors" style={{maxWidth: '28rem'}}>
+                    <span className="text-sm text-blue-600 font-medium">Default - Generic</span>
+                    <ChevronDown />
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <h2 className="text-lg font-semibold mb-4">SUMMARY</h2>
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Meeting Attendees</h3>
+                    <ul className="space-y-2">
+                      {MEETING_DATA.attendees.map((attendee, i) => (
+                        <li key={i} className="text-sm">
+                          <span className="font-semibold">{attendee.name}</span>
+                          <span className="text-gray-600">, {attendee.company}, {attendee.percentage} - {attendee.role}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">Meeting Overview</h3>
+                    <p className="text-sm text-gray-700 leading-relaxed">{MEETING_DATA.overview}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{width: '20rem'}}>
+                <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-6">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Your feedback</h3>
+                  <div className="mb-4">
+                    <label className="text-sm text-gray-600 mb-2" style={{display: 'block'}}>Completeness of summary</label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button key={star} onClick={() => setCompletenessRating(star)} className="transition-colors" style={{color: star <= completenessRating ? '#9ca3af' : '#d1d5db'}}>
+                          <Star filled={star <= completenessRating} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <label className="text-sm text-gray-600 mb-2" style={{display: 'block'}}>Accuracy of summary</label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button key={star} onClick={() => setAccuracyRating(star)} className="transition-colors" style={{color: star <= accuracyRating ? '#9ca3af' : '#d1d5db'}}>
+                          <Star filled={star <= accuracyRating} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <label className="text-sm text-gray-600 mb-2" style={{display: 'block'}}>How can we improve?</label>
+                    <textarea
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      placeholder="Share inaccuracies and product/ improvement ideas."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none"
+                      rows={4}
+                    />
+                  </div>
+                  <button className="w-full py-2 text-sm font-semibold text-gray-600 hover-text-gray-800 transition-colors">SAVE</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function JindoApp() {
+      const [searchQuery, setSearchQuery] = useState('');
+      const [contacts, setContacts] = useState(CONTACTS);
+      const [currentView, setCurrentView] = useState('meeting');
+      const [expandedContact, setExpandedContact] = useState(null);
+
+      return (
+        <div className="flex h-screen bg-gray-50">
+          <div style={{width: '16rem'}} className="bg-white border-r border-gray-200 flex flex-col">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Clients</h2>
+                <div className="flex gap-2">
+                  <button className="text-sm text-purple-600 hover-text-purple-700">Add</button>
+                  <button className="text-sm text-purple-600 hover-text-purple-700">Manage</button>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {contacts.map(contact => (
+                <div key={contact.id} className="border-b border-gray-100">
+                  <button
+                    onClick={() => setExpandedContact(expandedContact === contact.id ? null : contact.id)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover-bg-gray-50 transition-colors"
+                  >
+                    <span className="text-sm font-medium">{contact.name}</span>
+                    <ChevronDown rotated={expandedContact === contact.id} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col">
+            <div className="bg-white border-b border-gray-200 px-6 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <JindoLogo />
+                </div>
+                <div className="flex-1" style={{maxWidth: '48rem', margin: '0 2rem'}}>
+                  <div className="relative">
+                    <div className="absolute" style={{left: '0.75rem', top: '50%', transform: 'translateY(-50%)'}}>
+                      <Search />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search"
+                      className="w-full border border-gray-300 rounded-md py-2"
+                      style={{paddingLeft: '2.5rem', paddingRight: '1rem'}}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover-bg-blue-700 transition-colors">
+                    IMPORT MEETING
+                  </button>
+                  <div style={{width: '2rem', height: '2rem'}} className="bg-gray-200 rounded flex items-center text-sm font-semibold" style={{justifyContent: 'center'}}>PA</div>
+                </div>
+              </div>
+            </div>
+
+            {currentView === 'home' ? (
+              <AllMeetingThemesView onViewMeeting={() => setCurrentView('meeting')} />
+            ) : (
+              <MeetingDetailView onGoHome={() => setCurrentView('home')} />
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<JindoApp />, document.getElementById('root'));
+  </script>
+</body>
+</html>
